@@ -2,7 +2,6 @@
   <div class="container">
     <div class="row mt-3">
       <div class="col">
-        <span class="lead">FLC Near Me</span>
         <Map></Map>
       </div>
     </div>

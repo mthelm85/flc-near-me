@@ -1,6 +1,10 @@
 <template lang="html">
-  <div id="map" class="mt-3">
-    <button @click="getFLCs" class="btn btn-primary">Get FLCs</button>
+  <div>
+    <span class="lead">FLC Near Me</span>
+    <span class="float-right">Fetching data...</span>
+    <div id="map">
+      <button @click="getFLCs" class="btn btn-primary">Get FLCs</button>
+    </div>
   </div>
 </template>
 
@@ -25,11 +29,16 @@ export default {
   },
 
   async created () {
+    // Get user coordinates, save them
     let position = await this.getCoords()
     this.coords.lat = position.coords.latitude
     this.coords.lng = position.coords.longitude
+
+    // Reverse geocode user coordinates, save user state
     let geocode = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${this.coords.lat},${this.coords.lng}&key=${Google.API}`)
     this.coords.state = geocode.data.results[0].address_components[4].short_name
+
+    // Initialize the map and layers
     this.initMap()
     this.initLayers()
   },
@@ -42,31 +51,28 @@ export default {
         })
       })
     },
-    getFLCs () {
-      alert('Fetching FLCs near you...')
-      Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/filter_column/flc_state="${this.coords.state}"`,
+    async getFLCs () {
+      console.log('Fetching FLC Data...')
+      let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/filter_column/flc_state="${this.coords.state}"`,
         {
           headers: {
             'Content-Type': 'application/json',
             'X-API-KEY': 'ad69a25c-4a4f-403f-ac10-c484c5430b56'
           }
         }
-      ).then((res) => {
-        console.log(res.data)
-        for (let i = 0; i < res.data.length; i++) {
-          this.flcArray.push(res.data[i])
-        }
-      }).catch((err) => {
-        if (err) {
-          alert(err)
-        }
-      })
+      )
+      // Need to handle error
+      for (let i = 0; i < flc.data.length; i++) {
+        this.flcArray.push(flc.data[i])
+      }
     },
     initMap () {
       this.map = L.map('map').setView([this.coords.lat, this.coords.lng], 12)
+
       this.centerMarker = L.marker([this.coords.lat, this.coords.lng])
         .addTo(this.map)
         .bindPopup('You are here.')
+
       this.tileLayer = L.tileLayer(
         'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png',
         {
@@ -74,6 +80,7 @@ export default {
           attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>'
         }
       )
+
       this.tileLayer.addTo(this.map)
     },
     initLayers () {
@@ -88,7 +95,7 @@ export default {
   position: absolute;
   right: 5px;
   top: 5px;
-  z-index: 99999;
+  z-index: 2000;
 }
 #map {
   height: 600px;
