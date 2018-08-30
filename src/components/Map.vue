@@ -1,12 +1,13 @@
 <template lang="html">
   <div class="container">
-    <div class="row">
-      <div class="col-6">
+    <div class="row mt-3">
+      <div class="col-8">
         <span class="lead">FLC Near Me &bull; {{ coords.cityState }}</span>
       </div>
-      <div class="col-6 d-flex justify-content-end">
+      <div class="col-4 d-flex justify-content-end">
+        <span v-if="fetching" class="mt-1"><small class="mr-3"><span v-html="waitingMessage"></span></small></span>
         <transition name="fade" mode="out-in">
-          <button v-if="!fetching" @click="getFLCs" class="btn btn-primary">Get FLCs</button>
+          <button :disabled="disabled" v-if="!fetching" @click="getFLCs" class="btn btn-primary">Get FLCs</button>
           <radar-spinner
             v-else
             :animation-duration="2000"
@@ -39,13 +40,14 @@ export default {
         state: null,
         cityState: null
       },
-      flcArray: [],
       map: null,
       centerMarker: null,
       tileLayer: null,
       layers: [],
       locationStatus: 'unlocated',
-      fetching: false
+      fetching: false,
+      disabled: false,
+      waitingMessage: null
     }
   },
 
@@ -79,6 +81,7 @@ export default {
       })
     },
     async getFLCs () {
+      this.waiting()
       this.fetching = true
       let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/filter_column/flc_state="${this.coords.state}"`,
         {
@@ -89,8 +92,19 @@ export default {
         }
       )
       // Need to handle error
+
       for (let i = 0; i < flc.data.length; i++) {
-        this.flcArray.push(flc.data[i])
+        let address = (flc.data[i].FLC_ADDRESS + flc.data[i].FLC_CITY + flc.data[i].FLC_ZIP.replace(/ /g, '+'))
+        let res = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${Google.API}`)
+        if (res.data.status === 'OK') {
+          this.fetching = false
+          this.disabled = true
+          L.marker([res.data.results[0].geometry.location.lat, res.data.results[0].geometry.location.lng])
+            .addTo(this.map)
+            .bindPopup(flc.data[i].FLC_NAME)
+        } else {
+          console.log(`Error geocoding record with index ${i}`)
+        }
       }
     },
     initMap () {
@@ -112,6 +126,21 @@ export default {
     },
     initLayers () {
 
+    },
+    waiting () {
+      let array = [
+        'Fetching data...',
+        'This is so cool...',
+        'Time for coffee...',
+        'Oh, the anticipation!',
+        'I &hearts; WHD...'
+      ]
+      setTimeout(() => {
+        this.waitingMessage = array[Math.floor(Math.random() * array.length)]
+      }, 600)
+      setInterval(() => {
+        this.waitingMessage = array[Math.floor(Math.random() * array.length)]
+      }, 3000)
     }
   }
 }
