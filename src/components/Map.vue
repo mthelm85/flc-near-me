@@ -1,10 +1,10 @@
 <template lang="html">
   <div class="container">
     <div class="row mt-3">
-      <div class="col-8">
-        <span class="lead">FLC Near Me &bull; {{ coords.cityState }}</span>
+      <div class="col-6">
+        <span>FLCs Near: {{ coords.cityState }}</span>
       </div>
-      <div class="col-4 d-flex justify-content-end">
+      <div class="col-6 d-flex justify-content-end">
         <span v-if="fetching" class="mt-1"><small class="mr-3"><span v-html="waitingMessage"></span></small></span>
         <transition name="fade" mode="out-in">
           <button :disabled="disabled" v-if="!fetching" @click="getFLCs" class="btn btn-primary">Get FLCs</button>
@@ -45,6 +45,9 @@ export default {
       tileLayer: null,
       layers: [],
       locationStatus: 'unlocated',
+      markerIcons: {
+        center: null
+      },
       fetching: false,
       disabled: false,
       waitingMessage: null
@@ -101,7 +104,13 @@ export default {
           this.disabled = true
           L.marker([res.data.results[0].geometry.location.lat, res.data.results[0].geometry.location.lng])
             .addTo(this.map)
-            .bindPopup(flc.data[i].FLC_NAME)
+            .bindPopup(`
+              ${flc.data[i].FLC_NAME}
+              <br />
+              ${flc.data[i].FLC_ADDRESS}
+              <br />
+              ${flc.data[i].FLC_CITY}, ${flc.data[i].FLC_STATE} ${flc.data[i].FLC_ZIP}
+              `)
         } else {
           console.log(`Error geocoding record with index ${i}`)
         }
