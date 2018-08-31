@@ -1,4 +1,4 @@
-<template lang="html">
+this.map.map<template lang="html">
   <div class="container">
     <div class="row mt-3">
       <div class="col-6">
@@ -31,7 +31,9 @@ import Axios from 'axios'
 import Google from '@/Google'
 import L from 'leaflet'
 import { RadarSpinner } from 'epic-spinners'
+
 export default {
+
   data () {
     return {
       coords: {
@@ -40,11 +42,12 @@ export default {
         state: null,
         cityState: null
       },
-      map: null,
-      centerMarker: null,
-      tileLayer: null,
-      layers: [],
-      locationStatus: 'unlocated',
+      map: {
+        map: null,
+        centerMarker: null,
+        tileLayer: null,
+        layers: []
+      },
       markerIcons: {
         center: null
       },
@@ -63,19 +66,19 @@ export default {
     let position = await this.getCoords()
     this.coords.lat = position.coords.latitude
     this.coords.lng = position.coords.longitude
-    this.locationStatus = 'located'
 
-    // Reverse geocode user coordinates, save user state
+    // Reverse geocode user coordinates, save user state for use in call to DOL API, display cityState
     let geocode = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${this.coords.lat},${this.coords.lng}&key=${Google.API}`)
     this.coords.cityState = geocode.data.results[1].formatted_address
     this.coords.state = geocode.data.results[0].address_components[4].short_name
 
-    // Initialize the map and layers
+    // Initialize the map and layers based on user location
     this.initMap()
     this.initLayers()
   },
 
   methods: {
+
     getCoords () {
       return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition((position) => {
@@ -83,9 +86,11 @@ export default {
         })
       })
     },
+
     async getFLCs () {
       this.waiting()
       this.fetching = true
+      // Get FLCs from DOL API, filtering results by user State
       let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/filter_column/flc_state="${this.coords.state}"`,
         {
           headers: {
@@ -95,7 +100,7 @@ export default {
         }
       )
       // Need to handle error
-
+      // Geocode FLCs via Google API, create marker, add to map
       for (let i = 0; i < flc.data.length; i++) {
         let address = (flc.data[i].FLC_ADDRESS + flc.data[i].FLC_CITY + flc.data[i].FLC_ZIP.replace(/ /g, '+'))
         let res = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${Google.API}`)
@@ -103,7 +108,7 @@ export default {
           this.fetching = false
           this.disabled = true
           L.marker([res.data.results[0].geometry.location.lat, res.data.results[0].geometry.location.lng])
-            .addTo(this.map)
+            .addTo(this.map.map)
             .bindPopup(`
               ${flc.data[i].FLC_NAME}
               <br />
@@ -115,15 +120,17 @@ export default {
           console.log(`Error geocoding record with index ${i}`)
         }
       }
+      // If 200 records are received from DOL API, make another call for additional records
     },
-    initMap () {
-      this.map = L.map('map').setView([this.coords.lat, this.coords.lng], 12)
 
-      this.centerMarker = L.marker([this.coords.lat, this.coords.lng])
-        .addTo(this.map)
+    initMap () {
+      this.map.map = L.map('map').setView([this.coords.lat, this.coords.lng], 12)
+
+      this.map.centerMarker = L.marker([this.coords.lat, this.coords.lng])
+        .addTo(this.map.map)
         .bindPopup('You are here.')
 
-      this.tileLayer = L.tileLayer(
+      this.map.tileLayer = L.tileLayer(
         'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png',
         {
           maxZoom: 18,
@@ -131,26 +138,33 @@ export default {
         }
       )
 
-      this.tileLayer.addTo(this.map)
+      this.map.tileLayer.addTo(this.map.map)
     },
+
     initLayers () {
 
     },
+
     waiting () {
       let array = [
         'Fetching data...',
         'This is so cool...',
         'Time for coffee...',
-        'Oh, the anticipation!',
-        'I &hearts; WHD...'
+        'Warming up...',
+        'I &hearts; WHD...',
+        'Thinking really hard...',
+        'Cue the Jeopardy theme song...'
       ]
+      // After .6s, when transition has finished, display first message
       setTimeout(() => {
         this.waitingMessage = array[Math.floor(Math.random() * array.length)]
       }, 600)
+      // Change message every 4 seconds
       setInterval(() => {
         this.waitingMessage = array[Math.floor(Math.random() * array.length)]
-      }, 3000)
+      }, 4000)
     }
+
   }
 }
 </script>
