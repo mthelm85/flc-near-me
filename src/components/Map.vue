@@ -60,6 +60,7 @@ export default {
         })
       },
       fetching: false,
+      fetchMore: false,
       flcArray: [],
       flceArray: null,
       offset: 0,
@@ -117,8 +118,13 @@ export default {
         for (let i = 0; i < flc.data.length; i++) {
           this.flcArray.push(flc.data[i])
         }
+        if (flc.data.length === 200) {
+          this.offset += 200
+          this.fetchMore = true
+        } else if (this.offset >= 200 && flc.data.length < 200) {
+          this.fetchMore = false
+        }
         this.geoCodeFLCs()
-        this.offset += 200
       } catch (err) {
         this.fetching = false
         this.$swal({
@@ -165,10 +171,10 @@ export default {
           })
         }
       }
-      if (this.flcArray.length === this.offset) {
+      if (this.flcArray.length >= this.offset && this.fetchMore === true) {
         this.getFLCs()
       } else {
-        this.resultsMessage = `Retrieved ${this.flcArray.length} results`
+        this.resultsMessage = `Showing ${this.flcArray.length} results`
         this.showResultsMessage = true
       }
     },
@@ -231,7 +237,8 @@ export default {
         'I wish this was faster...',
         'Sorry about the wait...',
         'What\'s an FLC again?',
-        'Fasten your seatbelt...'
+        'Fasten your seatbelt...',
+        'Calling for backup...'
       ]
       // After .6s, when transition has finished, display first message
       setTimeout(() => {
