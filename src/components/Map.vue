@@ -2,7 +2,7 @@ this.map.map<template lang="html">
   <div class="container">
     <div class="row mt-3">
       <div class="col-6">
-        <span>FLCs Near: {{ coords.state }}</span>
+        <span><strong>Your Location:</strong> {{ coords.cityState }}</span>
       </div>
       <div class="col-6 d-flex justify-content-end">
         <span v-if="fetching" class="mt-1"><small class="mr-3"><span v-html="waitingMessage"></span></small></span>
@@ -62,6 +62,7 @@ export default {
       fetching: false,
       flcArray: [],
       flceArray: null,
+      offset: 0,
       disabled: false,
       waitingMessage: null,
       resultsMessage: null,
@@ -105,7 +106,7 @@ export default {
       this.fetching = true
       // Get FLCs from DOL API, filtering results by user State
       try {
-        let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/filter_column/flc_state="${this.coords.state}"`,
+        let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/offset/${this.offset}/columns/flc_cert_num:flc_name:flc_address:flc_city:flc_state:flc_zip:driving_auth:housing_auth:transportation_auth:flc_cert_start_date:flc_cert_end_date/filter_column/flc_state=${this.coords.state}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -117,6 +118,7 @@ export default {
           this.flcArray.push(flc.data[i])
         }
         this.geoCodeFLCs()
+        this.offset += 200
       } catch (err) {
         this.fetching = false
         this.$swal({
@@ -163,8 +165,12 @@ export default {
           })
         }
       }
-      this.resultsMessage = `Displaying ${this.flcArray.length} results`
-      this.showResultsMessage = true
+      if (this.flcArray.length === this.offset) {
+        this.getFLCs()
+      } else {
+        this.resultsMessage = `Retrieved ${this.flcArray.length} results`
+        this.showResultsMessage = true
+      }
     },
 
     async geoCodeUserPos () {
