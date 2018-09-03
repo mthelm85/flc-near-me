@@ -193,7 +193,7 @@ export default {
     },
 
     initMap () {
-      this.map.map = L.map('map').setView([this.coords.lat, this.coords.lng], 12)
+      this.map.map = L.map('map').setView([this.coords.lat, this.coords.lng], 8)
 
       this.map.centerMarker = L.marker([this.coords.lat, this.coords.lng], {
         icon: this.markerIcons.center,
