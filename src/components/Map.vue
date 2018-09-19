@@ -107,7 +107,7 @@ export default {
       this.fetching = true
       // Get FLCs from DOL API, filtering results by user State
       try {
-        let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/offset/${this.offset}/columns/flc_cert_num:flc_name:flc_address:flc_city:flc_state:flc_zip:driving_auth:housing_auth:transportation_auth:flc_cert_start_date:flc_cert_end_date/filter_column/flc_state=${this.coords.state}`,
+        let flc = await Axios.get(`https://data.dol.gov/get/flc_cert/limit/200/offset/${this.offset}/columns/flc_cert_num:flc_name:flc_address:flc_city:flc_state:flc_zip:driving_auth:housing_auth:transportation_auth:flc_cert_start_date:flc_cert_end_date/filter_column/flc_state=${this.coords.state}`,
           {
             headers: {
               'Content-Type': 'application/json',
