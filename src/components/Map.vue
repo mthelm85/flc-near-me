@@ -115,6 +115,7 @@ export default {
             }
           }
         )
+        if (flc.data.length === 0) this.fetching = false
         for (let i = 0; i < flc.data.length; i++) {
           this.flcArray.push(flc.data[i])
         }
@@ -184,10 +185,11 @@ export default {
       this.showResultsMessage = false
       // Reverse geocode user coordinates, save user state for use in call to DOL API, display cityState
       let geocode = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${this.coords.lat},${this.coords.lng}&key=${Google.API}`)
+      console.log(geocode.data)
       this.coords.cityState = geocode.data.results[1].formatted_address
       for (let i = 0; i < geocode.data.results.length; i++) {
-        if (geocode.data.results[i].types[0] === 'administrative_area_level_1') {
-          this.coords.state = geocode.data.results[i].address_components[0].short_name
+        if (geocode.data.results[i].types[0] === 'administrative_area_level_2') {
+          this.coords.state = geocode.data.results[i].address_components[1].short_name
         }
       }
     },
