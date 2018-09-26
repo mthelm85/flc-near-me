@@ -62,7 +62,8 @@ export default {
       fetching: false,
       fetchMore: false,
       flcArray: [],
-      flceArray: null,
+      flcArrayLengthOld: 0,
+      firstRun: true,
       offset: 0,
       disabled: false,
       waitingMessage: null,
@@ -105,6 +106,7 @@ export default {
     async getFLCs () {
       this.waiting()
       this.fetching = true
+      this.flcArrayLengthOld = this.flcArray.length
       // Get FLCs from DOL API, filtering results by user State
       try {
         let flc = await Axios.get(`https://cors-anywhere.herokuapp.com/https://data.dol.gov/get/flc_cert/limit/200/offset/${this.offset}/columns/flc_cert_num:flc_name:flc_address:flc_city:flc_state:flc_zip:driving_auth:housing_auth:transportation_auth:flc_cert_start_date:flc_cert_end_date/filter_column/flc_state=${this.coords.state}`,
@@ -116,6 +118,7 @@ export default {
           }
         )
         if (flc.data.length === 0) this.fetching = false
+
         for (let i = 0; i < flc.data.length; i++) {
           this.flcArray.push(flc.data[i])
         }
@@ -138,7 +141,7 @@ export default {
 
     async geoCodeFLCs () {
       // Geocode FLCs via Google API, create marker, add to map
-      for (let i = 0; i < this.flcArray.length; i++) {
+      for (let i = this.flcArrayLengthOld; i < this.flcArray.length; i++) {
         let address = (this.flcArray[i].FLC_ADDRESS + this.flcArray[i].FLC_CITY + this.flcArray[i].FLC_ZIP.replace(/ /g, '+'))
         try {
           let res = await Axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${Google.API}`)
@@ -160,6 +163,7 @@ export default {
                 <br />
                 Cert Period: ${this.flcArray[i].FLC_CERT_START_DATE} to ${this.flcArray[i].FLC_CERT_END_DATE}
                 `)
+            this.firstRun = false
           } else {
             console.log(`Error geocoding record with index ${i}`)
           }
